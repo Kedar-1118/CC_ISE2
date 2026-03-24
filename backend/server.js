@@ -4,6 +4,8 @@ const helmet = require('helmet');
 const morgan = require('morgan');
 const rateLimit = require('express-rate-limit');
 const dotenv = require('dotenv');
+const client = require('prom-client');
+const promBundle = require('express-prom-bundle');
 
 // Load environment variables
 dotenv.config();
@@ -57,6 +59,19 @@ if (process.env.NODE_ENV !== 'production') {
 // Custom request logger for /mock/* routes (logs to DB)
 app.use(requestLogger);
 
+// ---------- Prometheus Metrics ----------
+
+// Collect default Node.js metrics (CPU, memory, event loop, etc.)
+client.collectDefaultMetrics();
+
+// HTTP metrics middleware (must be registered before routes)
+const metricsMiddleware = promBundle({
+    includeMethod: true,
+    includePath: true,
+    includeStatusCode: true,
+});
+app.use(metricsMiddleware);
+
 // ---------- Routes ----------
 
 // Health check
@@ -69,6 +84,12 @@ app.use('/api/projects', projectRoutes);
 
 // Dynamic mock API engine
 app.use('/mock', mockRoutes);
+
+// Prometheus metrics endpoint
+app.get('/metrics', async (req, res) => {
+    res.set('Content-Type', client.register.contentType);
+    res.end(await client.register.metrics());
+});
 
 // ---------- Error Handling ----------
 
