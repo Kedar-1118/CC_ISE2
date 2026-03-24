@@ -1,6 +1,7 @@
 const Project = require('../models/Project');
 const RequestLog = require('../models/RequestLog');
 const { v4: uuidv4 } = require('uuid');
+const logger = require('../config/logger');
 
 /**
  * @desc    Create a new mock API project
@@ -11,6 +12,7 @@ exports.createProject = async (req, res, next) => {
         const { projectName, jsonData } = req.body;
 
         if (!projectName || !jsonData) {
+            logger.warn('Create project failed: missing projectName or jsonData');
             return res.status(400).json({
                 success: false,
                 error: 'projectName and jsonData are required',
@@ -19,6 +21,7 @@ exports.createProject = async (req, res, next) => {
 
         // Validate jsonData is a non-null object
         if (typeof jsonData !== 'object' || Array.isArray(jsonData) || jsonData === null) {
+            logger.warn(`Create project failed: invalid jsonData format for "${projectName}"`);
             return res.status(400).json({
                 success: false,
                 error: 'jsonData must be a JSON object where each key is a collection name and value is an array of records',
@@ -29,6 +32,7 @@ exports.createProject = async (req, res, next) => {
         const collections = new Map();
         for (const [key, value] of Object.entries(jsonData)) {
             if (!Array.isArray(value)) {
+                logger.warn(`Create project failed: collection "${key}" is not an array`);
                 return res.status(400).json({
                     success: false,
                     error: `Collection "${key}" must be an array of objects`,
@@ -47,6 +51,7 @@ exports.createProject = async (req, res, next) => {
             collections,
         });
 
+        logger.info(`Project created: "${projectName}" (${project._id}) with ${collections.size} collections`);
         res.status(201).json({
             success: true,
             data: {
@@ -60,11 +65,13 @@ exports.createProject = async (req, res, next) => {
     } catch (error) {
         // Handle duplicate key error
         if (error.code === 11000) {
+            logger.warn(`Duplicate project name: "${req.body.projectName}"`);
             return res.status(409).json({
                 success: false,
                 error: 'A project with that name already exists',
             });
         }
+        logger.error(`Error in createProject: ${error.message}`);
         next(error);
     }
 };
@@ -86,8 +93,10 @@ exports.getAllProjects = async (req, res, next) => {
             createdAt: p.createdAt,
         }));
 
+        logger.info(`Fetched all projects (${data.length} projects)`);
         res.json({ success: true, count: data.length, data });
     } catch (error) {
+        logger.error(`Error in getAllProjects: ${error.message}`);
         next(error);
     }
 };
@@ -101,9 +110,11 @@ exports.getProject = async (req, res, next) => {
         const project = await Project.findById(req.params.id);
 
         if (!project) {
+            logger.warn(`Project not found: ${req.params.id}`);
             return res.status(404).json({ success: false, error: 'Project not found' });
         }
 
+        logger.info(`Fetched project: "${project.projectName}" (${project._id})`);
         res.json({
             success: true,
             data: {
@@ -115,6 +126,7 @@ exports.getProject = async (req, res, next) => {
             },
         });
     } catch (error) {
+        logger.error(`Error in getProject: ${error.message}`);
         next(error);
     }
 };
@@ -128,14 +140,17 @@ exports.deleteProject = async (req, res, next) => {
         const project = await Project.findByIdAndDelete(req.params.id);
 
         if (!project) {
+            logger.warn(`Delete failed - project not found: ${req.params.id}`);
             return res.status(404).json({ success: false, error: 'Project not found' });
         }
 
         // Also delete related request logs
         await RequestLog.deleteMany({ projectId: req.params.id });
 
+        logger.info(`Deleted project: "${project.projectName}" (${req.params.id}) and its logs`);
         res.json({ success: true, data: {} });
     } catch (error) {
+        logger.error(`Error in deleteProject: ${error.message}`);
         next(error);
     }
 };

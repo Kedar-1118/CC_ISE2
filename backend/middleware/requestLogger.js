@@ -1,5 +1,6 @@
 const RequestLog = require('../models/RequestLog');
 const Project = require('../models/Project');
+const logger = require('../config/logger');
 
 /**
  * Request Logger Middleware
@@ -31,6 +32,8 @@ const requestLogger = (req, res, next) => {
             const project = await Project.findOne({ basePath: projectPath }).select('_id');
             if (!project) return;
 
+            const responseTime = Date.now() - startTime;
+
             await RequestLog.create({
                 projectId: project._id,
                 endpoint: req.originalUrl,
@@ -39,8 +42,12 @@ const requestLogger = (req, res, next) => {
                 statusCode: res.statusCode,
                 timestamp: new Date(),
             });
+
+            logger.info(`Mock request logged: ${req.method} ${req.originalUrl} ${res.statusCode} ${responseTime}ms`, {
+                labels: { type: 'mock-request', method: req.method, status: String(res.statusCode) },
+            });
         } catch (error) {
-            // Silently fail — logging should never break the request
+            logger.error(`Request logging error: ${error.message}`, { labels: { type: 'logging-error' } });
             console.error('Request logging error:', error.message);
         }
     });

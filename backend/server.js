@@ -11,6 +11,7 @@ const promBundle = require('express-prom-bundle');
 dotenv.config();
 
 const connectDB = require('./config/db');
+const logger = require('./config/logger');
 const projectRoutes = require('./routes/projectRoutes');
 const mockRoutes = require('./routes/mockRoutes');
 const requestLogger = require('./middleware/requestLogger');
@@ -40,6 +41,10 @@ const limiter = rateLimit({
     standardHeaders: true,
     legacyHeaders: false,
     message: { success: false, error: 'Too many requests, please try again later' },
+    handler: (req, res, next, options) => {
+        logger.warn(`Rate limit exceeded for IP: ${req.ip}`);
+        res.status(options.statusCode).json(options.message);
+    },
 });
 app.use(limiter);
 
@@ -55,6 +60,12 @@ app.use(express.urlencoded({ extended: true, limit: '1mb' }));
 if (process.env.NODE_ENV !== 'production') {
     app.use(morgan('dev'));
 }
+
+// Log every incoming request to Loki
+app.use((req, res, next) => {
+    logger.info(`${req.method} ${req.originalUrl}`, { labels: { route: req.originalUrl, method: req.method } });
+    next();
+});
 
 // Custom request logger for /mock/* routes (logs to DB)
 app.use(requestLogger);
@@ -76,6 +87,7 @@ app.use(metricsMiddleware);
 
 // Health check
 app.get('/api/health', (req, res) => {
+    logger.info('Health check hit');
     res.json({ status: 'ok', timestamp: new Date().toISOString() });
 });
 
@@ -95,6 +107,7 @@ app.get('/metrics', async (req, res) => {
 
 // 404 handler
 app.use((req, res) => {
+    logger.warn(`404 Not Found: ${req.method} ${req.originalUrl}`, { labels: { status: '404' } });
     res.status(404).json({ success: false, error: 'Route not found' });
 });
 
@@ -106,12 +119,19 @@ app.use(errorHandler);
 const PORT = process.env.PORT || 5000;
 
 const startServer = async () => {
-    await connectDB();
-    app.listen(PORT, () => {
-        console.log(`🚀 Server running on port ${PORT} in ${process.env.NODE_ENV || 'development'} mode`);
-        console.log(`📡 API:  http://localhost:${PORT}/api`);
-        console.log(`🔗 Mock: http://localhost:${PORT}/mock`);
-    });
+    try {
+        await connectDB();
+        app.listen(PORT, () => {
+            logger.info(`Server running on port ${PORT} in ${process.env.NODE_ENV || 'development'} mode`);
+            console.log(`🚀 Server running on port ${PORT} in ${process.env.NODE_ENV || 'development'} mode`);
+            console.log(`📡 API:  http://localhost:${PORT}/api`);
+            console.log(`🔗 Mock: http://localhost:${PORT}/mock`);
+        });
+    } catch (error) {
+        logger.error(`Failed to start server: ${error.message}`);
+        console.error('❌ Failed to start server:', error.message);
+        process.exit(1);
+    }
 };
 
 startServer();
