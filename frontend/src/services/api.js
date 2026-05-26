@@ -7,7 +7,22 @@ const api = axios.create({
     baseURL: API_BASE,
     headers: { 'Content-Type': 'application/json' },
     timeout: 15000,
+    withCredentials: true, // Required for httpOnly JWT cookies
 });
+
+// ─── Authentication ───────────────────────────────────
+
+export const sendOtp = (email) =>
+    api.post('/api/auth/send-otp', { email });
+
+export const verifyOtp = (email, otp) =>
+    api.post('/api/auth/verify-otp', { email, otp });
+
+export const logout = () =>
+    api.post('/api/auth/logout');
+
+export const getMe = () =>
+    api.get('/api/auth/me');
 
 // ─── Project Management ───────────────────────────────
 
@@ -28,6 +43,11 @@ export const deleteProject = (id) =>
 export const getProjectLogs = (id) =>
     api.get(`/api/projects/${id}/logs`);
 
+// ─── API Key Management ──────────────────────────────
+
+export const resetApiKey = (id) =>
+    api.post(`/api/projects/${id}/reset-key`);
+
 // ─── Mock API Testing ─────────────────────────────────
 
 export const testMockEndpoint = (method, url, body = null) => {
@@ -39,4 +59,5 @@ export const testMockEndpoint = (method, url, body = null) => {
     return axios(config);
 };
 
+export { API_BASE };
 export default api;
