@@ -31,7 +31,7 @@ app.use(helmet());
 // CORS: allow frontend origin with credentials
 app.use(
     cors({
-        origin: process.env.CORS_ORIGIN || 'http://localhost:5173',
+        origin: process.env.CORS_ORIGIN ,
         methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH'],
         credentials: true,
     })
