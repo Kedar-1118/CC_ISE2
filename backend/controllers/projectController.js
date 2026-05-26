@@ -3,6 +3,8 @@ const RequestLog = require('../models/RequestLog');
 const { v4: uuidv4 } = require('uuid');
 const logger = require('../config/logger');
 
+const MAX_PROJECTS_PER_USER = 3;
+
 /**
  * @desc    Create a new mock API project
  * @route   POST /api/projects
@@ -16,6 +18,16 @@ exports.createProject = async (req, res, next) => {
             return res.status(400).json({
                 success: false,
                 error: 'projectName and jsonData are required',
+            });
+        }
+
+        // Enforce per-user project limit
+        const projectCount = await Project.countDocuments({ owner: req.user._id });
+        if (projectCount >= MAX_PROJECTS_PER_USER) {
+            logger.warn(`Project limit reached for user ${req.user.email} (${projectCount}/${MAX_PROJECTS_PER_USER})`);
+            return res.status(403).json({
+                success: false,
+                error: `You can create a maximum of ${MAX_PROJECTS_PER_USER} projects. Please delete an existing project to create a new one.`,
             });
         }
 
@@ -46,19 +58,31 @@ exports.createProject = async (req, res, next) => {
             collections.set(key, records);
         }
 
+        // Generate unique API key
+        const apiKey = uuidv4();
+
         const project = await Project.create({
             projectName,
             collections,
+            owner: req.user._id,
+            apiKey,
+            weeklyRateLimit: {
+                requestCount: 0,
+                weekStart: new Date(),
+                limit: parseInt(process.env.WEEKLY_RATE_LIMIT) || 500,
+            },
         });
 
-        logger.info(`Project created: "${projectName}" (${project._id}) with ${collections.size} collections`);
+        logger.info(`Project created: "${projectName}" (${project._id}) by ${req.user.email} with API key ${apiKey.substring(0, 8)}... and ${collections.size} collections`);
         res.status(201).json({
             success: true,
             data: {
                 id: project._id,
                 projectName: project.projectName,
                 basePath: project.basePath,
+                apiKey: project.apiKey,
                 collections: Object.fromEntries(project.collections),
+                weeklyRateLimit: project.weeklyRateLimit,
                 createdAt: project.createdAt,
             },
         });
@@ -77,23 +101,26 @@ exports.createProject = async (req, res, next) => {
 };
 
 /**
- * @desc    Get all projects (summary list)
+ * @desc    Get all projects for the authenticated user (summary list)
  * @route   GET /api/projects
  */
 exports.getAllProjects = async (req, res, next) => {
     try {
-        const projects = await Project.find().sort({ createdAt: -1 });
+        // Only return projects owned by the authenticated user
+        const projects = await Project.find({ owner: req.user._id }).sort({ createdAt: -1 });
 
         const data = projects.map((p) => ({
             id: p._id,
             projectName: p.projectName,
             basePath: p.basePath,
+            apiKey: p.apiKey,
             collectionNames: [...p.collections.keys()],
             collectionCount: p.collections.size,
+            weeklyRateLimit: p.weeklyRateLimit,
             createdAt: p.createdAt,
         }));
 
-        logger.info(`Fetched all projects (${data.length} projects)`);
+        logger.info(`Fetched ${data.length} projects for user ${req.user.email}`);
         res.json({ success: true, count: data.length, data });
     } catch (error) {
         logger.error(`Error in getAllProjects: ${error.message}`);
@@ -114,6 +141,12 @@ exports.getProject = async (req, res, next) => {
             return res.status(404).json({ success: false, error: 'Project not found' });
         }
 
+        // Verify ownership
+        if (project.owner.toString() !== req.user._id.toString()) {
+            logger.warn(`Unauthorized access to project ${req.params.id} by user ${req.user._id}`);
+            return res.status(403).json({ success: false, error: 'Not authorized to access this project' });
+        }
+
         logger.info(`Fetched project: "${project.projectName}" (${project._id})`);
         res.json({
             success: true,
@@ -121,7 +154,9 @@ exports.getProject = async (req, res, next) => {
                 id: project._id,
                 projectName: project.projectName,
                 basePath: project.basePath,
+                apiKey: project.apiKey,
                 collections: Object.fromEntries(project.collections),
+                weeklyRateLimit: project.weeklyRateLimit,
                 createdAt: project.createdAt,
             },
         });
@@ -137,12 +172,20 @@ exports.getProject = async (req, res, next) => {
  */
 exports.deleteProject = async (req, res, next) => {
     try {
-        const project = await Project.findByIdAndDelete(req.params.id);
+        const project = await Project.findById(req.params.id);
 
         if (!project) {
             logger.warn(`Delete failed - project not found: ${req.params.id}`);
             return res.status(404).json({ success: false, error: 'Project not found' });
         }
+
+        // Verify ownership
+        if (project.owner.toString() !== req.user._id.toString()) {
+            logger.warn(`Unauthorized delete of project ${req.params.id} by user ${req.user._id}`);
+            return res.status(403).json({ success: false, error: 'Not authorized to delete this project' });
+        }
+
+        await Project.findByIdAndDelete(req.params.id);
 
         // Also delete related request logs
         await RequestLog.deleteMany({ projectId: req.params.id });
