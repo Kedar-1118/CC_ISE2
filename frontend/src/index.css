@@ -134,6 +134,7 @@ code {
 
 .navbar-links {
   display: flex;
+  align-items: center;
   gap: 0.5rem;
 }
 
@@ -155,6 +156,34 @@ code {
 .nav-link.active {
   color: var(--accent);
   background: var(--accent-glow);
+}
+
+/* ─── Navbar User Menu ──────────────────────────────────── */
+.navbar-user {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-left: 1rem;
+  padding-left: 1rem;
+  border-left: 1px solid var(--accent-border);
+}
+
+.navbar-email {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  max-width: 180px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.nav-logout {
+  font-size: 1.1rem;
+  color: var(--text-muted);
+  padding: 0.35rem;
+}
+.nav-logout:hover {
+  color: var(--error);
 }
 
 /* ─── Main Content ──────────────────────────────────────── */
@@ -191,6 +220,7 @@ code {
 
 .page-header-actions {
   display: flex;
+  align-items: center;
   gap: 0.5rem;
 }
 
@@ -208,6 +238,31 @@ code {
   margin-bottom: 0.5rem;
 }
 .back-link:hover { color: var(--accent); }
+
+/* ─── Project Limit Badge ──────────────────────────────── */
+.project-limit-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.35rem 0.75rem;
+  border-radius: 20px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  font-family: var(--font-mono);
+  background: var(--accent-glow);
+  color: var(--accent);
+  border: 1px solid var(--accent-border);
+}
+.project-limit-badge.at-limit {
+  background: rgba(243, 139, 168, 0.15);
+  color: var(--error);
+  border-color: rgba(243, 139, 168, 0.3);
+}
+
+.btn-disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  pointer-events: none;
+}
 
 /* ─── Buttons ───────────────────────────────────────────── */
 .btn {
@@ -312,7 +367,7 @@ code {
   transition: all 0.25s;
   display: flex;
   flex-direction: column;
-  gap: 1rem;
+  gap: 0.75rem;
 }
 .project-card:hover {
   border-color: var(--accent);
@@ -357,6 +412,20 @@ code {
   color: var(--accent);
 }
 
+.project-card-key {
+  display: flex;
+  align-items: center;
+}
+.key-snippet {
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  padding: 0.2rem 0.5rem;
+  background: var(--bg-surface);
+  border: 1px solid var(--accent-border);
+  border-radius: var(--radius-xs);
+  color: var(--text-muted);
+}
+
 .project-card-collections {
   display: flex;
   flex-wrap: wrap;
@@ -369,6 +438,38 @@ code {
   font-size: 0.75rem;
   font-family: var(--font-mono);
   color: var(--text-secondary);
+}
+
+/* ─── Rate Limit Mini Bar (Project Card) ────────────────── */
+.project-card-rate {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+.rate-mini-bar {
+  flex: 1;
+  height: 4px;
+  background: var(--bg-elevated);
+  border-radius: 2px;
+  overflow: hidden;
+}
+.rate-mini-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--accent), #b4befe);
+  border-radius: 2px;
+  transition: width 0.5s ease;
+}
+.rate-mini-fill.warning {
+  background: linear-gradient(90deg, var(--warning), #fab387);
+}
+.rate-mini-fill.danger {
+  background: linear-gradient(90deg, var(--error), #f38ba8);
+}
+.rate-mini-label {
+  font-size: 0.7rem;
+  font-family: var(--font-mono);
+  color: var(--text-muted);
+  white-space: nowrap;
 }
 
 .project-card-footer {
@@ -737,12 +838,261 @@ code {
   margin: 0;
 }
 
+/* ─── API Key Card ──────────────────────────────────────── */
+.api-key-card {
+  background: var(--bg-card);
+  border: 1px solid var(--accent-border);
+  border-radius: var(--radius);
+  padding: 1.25rem;
+  margin-bottom: 1.25rem;
+  backdrop-filter: blur(10px);
+}
+
+.api-key-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 0.75rem;
+}
+
+.api-key-title {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+.api-key-title h3 {
+  font-size: 0.95rem;
+  font-weight: 600;
+}
+.api-key-icon {
+  color: var(--accent);
+  font-size: 1.2rem;
+}
+
+.api-key-value {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.6rem 1rem;
+  background: var(--bg-surface);
+  border: 1px solid var(--accent-border);
+  border-radius: var(--radius-sm);
+  margin-bottom: 0.5rem;
+}
+
+.api-key-text {
+  flex: 1;
+  font-family: var(--font-mono);
+  font-size: 0.85rem;
+  color: var(--text-primary);
+  background: transparent;
+  padding: 0;
+  user-select: all;
+  word-break: break-all;
+}
+
+.api-key-actions {
+  display: flex;
+  gap: 0.25rem;
+  flex-shrink: 0;
+}
+
+.api-key-hint {
+  font-size: 0.78rem;
+  color: var(--text-muted);
+}
+.api-key-hint code {
+  font-size: 0.75rem;
+}
+
+/* ─── Rate Limit Card ───────────────────────────────────── */
+.rate-limit-card {
+  background: var(--bg-card);
+  border: 1px solid var(--accent-border);
+  border-radius: var(--radius);
+  padding: 1.25rem;
+  margin-bottom: 1.5rem;
+  backdrop-filter: blur(10px);
+}
+
+.rate-limit-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 0.75rem;
+}
+.rate-limit-header h3 {
+  font-size: 0.95rem;
+  font-weight: 600;
+}
+
+.rate-limit-count {
+  font-family: var(--font-mono);
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--accent);
+}
+.rate-limit-count.warning { color: var(--warning); }
+.rate-limit-count.danger { color: var(--error); }
+
+.rate-limit-bar {
+  width: 100%;
+  height: 8px;
+  background: var(--bg-elevated);
+  border-radius: 4px;
+  overflow: hidden;
+  margin-bottom: 0.5rem;
+}
+
+.rate-limit-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--accent), #b4befe);
+  border-radius: 4px;
+  transition: width 0.5s ease;
+}
+.rate-limit-fill.warning {
+  background: linear-gradient(90deg, var(--warning), #f9e2af);
+}
+.rate-limit-fill.danger {
+  background: linear-gradient(90deg, var(--error), #eba0ac);
+}
+
+.rate-limit-footer {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.75rem;
+}
+
+/* ─── Login Page ────────────────────────────────────────── */
+.login-page {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: calc(100vh - 64px);
+  padding: 2rem;
+}
+
+.login-card {
+  width: 100%;
+  max-width: 420px;
+  background: var(--bg-card);
+  border: 1px solid var(--accent-border);
+  border-radius: var(--radius);
+  padding: 2.5rem;
+  backdrop-filter: blur(20px);
+  box-shadow: var(--shadow);
+  animation: fadeIn 0.4s ease;
+}
+
+.login-brand {
+  text-align: center;
+  margin-bottom: 2rem;
+}
+.login-brand-icon {
+  font-size: 2.5rem;
+  color: var(--accent);
+  margin-bottom: 0.5rem;
+}
+.login-brand h1 {
+  font-size: 1.75rem;
+  font-weight: 700;
+  margin-bottom: 0.25rem;
+}
+
+.login-form {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+  animation: fadeIn 0.3s ease;
+}
+
+.login-step-header {
+  text-align: center;
+  margin-bottom: 0.5rem;
+}
+.login-step-header h2 {
+  font-size: 1.15rem;
+  font-weight: 600;
+  margin-bottom: 0.25rem;
+}
+
+.login-step-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background: var(--accent-glow);
+  color: var(--accent);
+  font-size: 1.5rem;
+  margin: 0 auto 0.75rem;
+}
+.login-step-icon-verify {
+  background: rgba(166, 227, 161, 0.15);
+  color: var(--success);
+}
+
+.login-btn {
+  width: 100%;
+  justify-content: center;
+}
+
+.login-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+/* ─── OTP Inputs ────────────────────────────────────────── */
+.otp-inputs {
+  display: flex;
+  justify-content: center;
+  gap: 0.5rem;
+}
+
+.otp-input {
+  width: 48px;
+  height: 56px;
+  text-align: center;
+  font-family: var(--font-mono);
+  font-size: 1.4rem;
+  font-weight: 600;
+  background: var(--bg-surface);
+  border: 2px solid var(--accent-border);
+  border-radius: var(--radius-sm);
+  color: var(--text-primary);
+  transition: all 0.2s;
+  caret-color: var(--accent);
+}
+.otp-input:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-glow);
+  background: var(--bg-overlay);
+}
+.otp-input::selection {
+  background: var(--accent-glow);
+}
+
+/* ─── Spin Animation ────────────────────────────────────── */
+.spin {
+  animation: spin 1s linear infinite;
+}
+
 /* ─── Responsive ────────────────────────────────────────── */
 @media (max-width: 768px) {
   .navbar { padding: 0 1rem; }
   .main-content { padding: 1rem; }
   .page-header { flex-direction: column; }
+  .page-header-actions { flex-wrap: wrap; }
   .project-grid { grid-template-columns: 1fr; }
   .tester-bar { flex-direction: column; }
   .method-select { width: 100%; }
+  .login-card { padding: 1.5rem; }
+  .otp-input { width: 42px; height: 50px; font-size: 1.2rem; }
+  .api-key-value { flex-direction: column; align-items: stretch; }
+  .api-key-actions { justify-content: flex-end; }
+  .navbar-user { display: none; }
 }
