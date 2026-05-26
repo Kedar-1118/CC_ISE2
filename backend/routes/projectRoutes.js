@@ -7,6 +7,7 @@ const {
     deleteProject,
 } = require('../controllers/projectController');
 const { getLogsByProject } = require('../controllers/logController');
+const { resetApiKey } = require('../controllers/apiKeyController');
 
 // Project CRUD
 router.post('/', createProject);
@@ -16,5 +17,8 @@ router.delete('/:id', deleteProject);
 
 // Project request logs
 router.get('/:id/logs', getLogsByProject);
+
+// API key management
+router.post('/:id/reset-key', resetApiKey);
 
 module.exports = router;

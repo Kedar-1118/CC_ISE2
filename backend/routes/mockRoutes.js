@@ -1,5 +1,6 @@
 const express = require('express');
 const router = express.Router();
+const apiKeyAuth = require('../middleware/apiKeyAuth');
 const {
     getRecords,
     createRecord,
@@ -7,11 +8,15 @@ const {
     deleteRecord,
 } = require('../controllers/mockController');
 
-// Dynamic mock CRUD routes
-router.get('/:projectPath/:collection', getRecords);
-router.get('/:projectPath/:collection/:id', getRecords);
-router.post('/:projectPath/:collection', createRecord);
-router.put('/:projectPath/:collection/:id', updateRecord);
-router.delete('/:projectPath/:collection/:id', deleteRecord);
+// All mock routes require API key authentication
+// URL pattern: /api/:apiKey/:collection[/:id]
+// The apiKeyAuth middleware validates the key, checks rate limits,
+// and attaches req.project before reaching the controller.
+
+router.get('/:apiKey/:collection', apiKeyAuth, getRecords);
+router.get('/:apiKey/:collection/:id', apiKeyAuth, getRecords);
+router.post('/:apiKey/:collection', apiKeyAuth, createRecord);
+router.put('/:apiKey/:collection/:id', apiKeyAuth, updateRecord);
+router.delete('/:apiKey/:collection/:id', apiKeyAuth, deleteRecord);
 
 module.exports = router;
