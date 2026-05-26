@@ -1,19 +1,41 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import JsonEditor from '../components/JsonEditor';
-import { createProject } from '../services/api';
+import { createProject, getProjects } from '../services/api';
 import { HiOutlineLightningBolt } from 'react-icons/hi';
+
+const MAX_PROJECTS = 3;
 
 /**
  * CreateProject — Form to create a new mock API project.
  * User enters a project name and pastes/uploads JSON data.
+ * Checks project count on mount and redirects if limit reached.
  */
 export default function CreateProject() {
     const navigate = useNavigate();
     const [projectName, setProjectName] = useState('');
     const [jsonText, setJsonText] = useState('');
     const [loading, setLoading] = useState(false);
+    const [checking, setChecking] = useState(true);
+
+    // Check project limit on mount
+    useEffect(() => {
+        const checkLimit = async () => {
+            try {
+                const { data } = await getProjects();
+                if (data.data.length >= MAX_PROJECTS) {
+                    toast.error(`Project limit reached (${MAX_PROJECTS}/${MAX_PROJECTS}). Delete an existing project first.`);
+                    navigate('/');
+                }
+            } catch {
+                // Silently fail — limit will be enforced on submit anyway
+            } finally {
+                setChecking(false);
+            }
+        };
+        checkLimit();
+    }, [navigate]);
 
     const handleSubmit = async (e) => {
         e.preventDefault();
@@ -60,6 +82,14 @@ export default function CreateProject() {
             setLoading(false);
         }
     };
+
+    if (checking) {
+        return (
+            <div className="page">
+                <div className="loader-container"><div className="loader" /></div>
+            </div>
+        );
+    }
 
     return (
         <div className="page">

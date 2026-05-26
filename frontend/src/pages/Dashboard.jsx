@@ -5,9 +5,11 @@ import toast from 'react-hot-toast';
 import ProjectCard from '../components/ProjectCard';
 import { getProjects, deleteProject } from '../services/api';
 
+const MAX_PROJECTS = 3;
+
 /**
  * Dashboard — Lists all existing mock API projects in a card grid.
- * Supports search filtering and project deletion.
+ * Supports search filtering, project deletion, and shows project limit indicator.
  */
 export default function Dashboard() {
     const [projects, setProjects] = useState([]);
@@ -45,6 +47,8 @@ export default function Dashboard() {
         p.projectName.toLowerCase().includes(search.toLowerCase())
     );
 
+    const atLimit = projects.length >= MAX_PROJECTS;
+
     return (
         <div className="page">
             <div className="page-header">
@@ -52,9 +56,20 @@ export default function Dashboard() {
                     <h1>Your Projects</h1>
                     <p className="text-muted">Manage your mock API projects</p>
                 </div>
-                <Link to="/create" className="btn btn-primary">
-                    <HiOutlinePlusCircle /> New Project
-                </Link>
+                <div className="page-header-actions">
+                    <span className={`project-limit-badge ${atLimit ? 'at-limit' : ''}`}>
+                        {projects.length}/{MAX_PROJECTS} projects
+                    </span>
+                    {atLimit ? (
+                        <span className="btn btn-primary btn-disabled" title="Project limit reached. Delete a project to create a new one.">
+                            <HiOutlinePlusCircle /> Limit Reached
+                        </span>
+                    ) : (
+                        <Link to="/create" className="btn btn-primary">
+                            <HiOutlinePlusCircle /> New Project
+                        </Link>
+                    )}
+                </div>
             </div>
 
             {projects.length > 0 && (
