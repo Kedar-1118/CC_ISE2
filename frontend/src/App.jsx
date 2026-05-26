@@ -8,6 +8,8 @@ import Dashboard from './pages/Dashboard';
 import CreateProject from './pages/CreateProject';
 import ProjectDetail from './pages/ProjectDetail';
 import ApiTester from './pages/ApiTester';
+import LandingPage from './pages/LandingPage';
+import DocsPage from './pages/DocsPage';
 
 export default function App() {
   return (
@@ -27,7 +29,9 @@ export default function App() {
         <main className="main-content">
           <Routes>
             <Route path="/login" element={<LoginPage />} />
-            <Route path="/" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
+            <Route path="/" element={<LandingPage />} />
+            <Route path="/docs" element={<DocsPage />} />
+            <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
             <Route path="/create" element={<ProtectedRoute><CreateProject /></ProtectedRoute>} />
             <Route path="/project/:id" element={<ProtectedRoute><ProjectDetail /></ProtectedRoute>} />
             <Route path="/tester" element={<ProtectedRoute><ApiTester /></ProtectedRoute>} />

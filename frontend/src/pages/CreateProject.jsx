@@ -26,7 +26,7 @@ export default function CreateProject() {
                 const { data } = await getProjects();
                 if (data.data.length >= MAX_PROJECTS) {
                     toast.error(`Project limit reached (${MAX_PROJECTS}/${MAX_PROJECTS}). Delete an existing project first.`);
-                    navigate('/');
+                    navigate('/dashboard');
                 }
             } catch {
                 // Silently fail — limit will be enforced on submit anyway

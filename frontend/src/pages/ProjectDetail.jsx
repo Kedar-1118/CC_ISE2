@@ -34,7 +34,7 @@ export default function ProjectDetail() {
                 setLogs(logRes.data.data);
             } catch {
                 toast.error('Failed to load project');
-                navigate('/');
+                navigate('/dashboard');
             } finally {
                 setLoading(false);
             }
@@ -47,7 +47,7 @@ export default function ProjectDetail() {
         try {
             await deleteProject(id);
             toast.success('Project deleted');
-            navigate('/');
+            navigate('/dashboard');
         } catch {
             toast.error('Failed to delete project');
         }
@@ -115,7 +115,7 @@ export default function ProjectDetail() {
         <div className="page">
             <div className="page-header">
                 <div>
-                    <Link to="/" className="back-link"><HiOutlineArrowLeft /> Back to Dashboard</Link>
+                    <Link to="/dashboard" className="back-link"><HiOutlineArrowLeft /> Back to Dashboard</Link>
                     <h1>{project.projectName}</h1>
                     <p className="text-muted">Base path: <code>/mock/{project.basePath}</code></p>
                 </div>

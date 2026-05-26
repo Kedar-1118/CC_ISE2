@@ -21,7 +21,7 @@ export default function LoginPage() {
 
     // Redirect if already logged in
     useEffect(() => {
-        if (user) navigate('/', { replace: true });
+        if (user) navigate('/dashboard', { replace: true });
     }, [user, navigate]);
 
     // Countdown timer for resend
@@ -98,7 +98,7 @@ export default function LoginPage() {
             setLoading(true);
             await verifyOtp(email.trim(), otpString);
             toast.success('Welcome to MockAPI!');
-            navigate('/', { replace: true });
+            navigate('/dashboard', { replace: true });
         } catch (err) {
             const msg = err.response?.data?.error || 'Invalid OTP';
             toast.error(msg);
