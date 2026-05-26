@@ -9,15 +9,16 @@ const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:5000';
 /**
  * ApiTester — Minimal API testing console.
  * User selects HTTP method, enters URL, optional body, sends request, and sees response.
+ * Updated to use /api/:apiKey/ URL pattern.
  */
 export default function ApiTester() {
     const [searchParams] = useSearchParams();
-    const basePath = searchParams.get('basePath') || '';
+    const apiKey = searchParams.get('apiKey') || '';
     const collection = searchParams.get('collection') || '';
 
     const [method, setMethod] = useState('GET');
     const [url, setUrl] = useState(
-        basePath ? `${API_BASE}/mock/${basePath}/${collection}` : `${API_BASE}/mock/`
+        apiKey ? `${API_BASE}/api/${apiKey}/${collection}` : `${API_BASE}/api/`
     );
     const [body, setBody] = useState('');
     const [response, setResponse] = useState(null);
@@ -85,7 +86,7 @@ export default function ApiTester() {
                         <input
                             type="text"
                             className="url-input"
-                            placeholder={`${API_BASE}/mock/your-project/collection`}
+                            placeholder={`${API_BASE}/api/{API_KEY}/collection`}
                             value={url}
                             onChange={(e) => setUrl(e.target.value)}
                         />

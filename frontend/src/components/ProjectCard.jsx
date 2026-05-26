@@ -3,12 +3,17 @@ import { HiOutlineTrash, HiOutlineExternalLink, HiOutlineDatabase } from 'react-
 
 /**
  * ProjectCard — Displays a single project on the dashboard grid.
+ * Shows rate limit usage bar and truncated API key.
  *
  * Props:
- *  - project: { id, projectName, basePath, collectionNames, collectionCount, createdAt }
+ *  - project: { id, projectName, basePath, apiKey, collectionNames, collectionCount, weeklyRateLimit, createdAt }
  *  - onDelete: callback when delete button is clicked
  */
 export default function ProjectCard({ project, onDelete }) {
+    const rateUsed = project.weeklyRateLimit?.requestCount || 0;
+    const rateLimit = project.weeklyRateLimit?.limit || 500;
+    const ratePercent = Math.min((rateUsed / rateLimit) * 100, 100);
+
     return (
         <div className="project-card">
             <div className="project-card-header">
@@ -25,6 +30,13 @@ export default function ProjectCard({ project, onDelete }) {
                 </span>
             </div>
 
+            {/* API Key Snippet */}
+            <div className="project-card-key">
+                <code className="key-snippet">
+                    {project.apiKey?.substring(0, 8)}••••
+                </code>
+            </div>
+
             {project.collectionNames?.length > 0 && (
                 <div className="project-card-collections">
                     {project.collectionNames.map((name) => (
@@ -32,6 +44,17 @@ export default function ProjectCard({ project, onDelete }) {
                     ))}
                 </div>
             )}
+
+            {/* Rate Limit Mini Bar */}
+            <div className="project-card-rate">
+                <div className="rate-mini-bar">
+                    <div
+                        className={`rate-mini-fill ${ratePercent >= 90 ? 'danger' : ratePercent >= 70 ? 'warning' : ''}`}
+                        style={{ width: `${ratePercent}%` }}
+                    />
+                </div>
+                <span className="rate-mini-label">{rateUsed}/{rateLimit} req/week</span>
+            </div>
 
             <div className="project-card-footer">
                 <span className="project-card-date">
