@@ -5,9 +5,12 @@ const mongoose = require('mongoose');
  *
  * Represents a mock API project created by a user.
  * - projectName  : unique human-readable name
- * - basePath     : URL-safe slug derived from projectName (used in /mock/:basePath/...)
+ * - basePath     : URL-safe slug derived from projectName (used in /mock/:basePath/...
+ * - owner        : reference to the User who created this project
+ * - apiKey       : unique API key for authenticating mock API requests
  * - collections  : Map where each key is a collection name and the value is an array of record objects.
  *                  Each record gets an auto-generated `_id` string field.
+ * - weeklyRateLimit : tracks API usage for rate limiting (rolling 7-day window)
  * - createdAt    : timestamp of creation
  */
 const projectSchema = new mongoose.Schema({
@@ -24,10 +27,27 @@ const projectSchema = new mongoose.Schema({
         trim: true,
         lowercase: true,
     },
+    owner: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'User',
+        required: true,
+        index: true,
+    },
+    apiKey: {
+        type: String,
+        unique: true,
+        required: true,
+        index: true,
+    },
     collections: {
         type: Map,
         of: [mongoose.Schema.Types.Mixed],
         default: {},
+    },
+    weeklyRateLimit: {
+        requestCount: { type: Number, default: 0 },
+        weekStart: { type: Date, default: Date.now },
+        limit: { type: Number, default: 500 },
     },
     createdAt: {
         type: Date,
