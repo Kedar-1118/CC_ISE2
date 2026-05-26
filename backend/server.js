@@ -4,6 +4,7 @@ const helmet = require('helmet');
 const morgan = require('morgan');
 const rateLimit = require('express-rate-limit');
 const dotenv = require('dotenv');
+const cookieParser = require('cookie-parser');
 const client = require('prom-client');
 const promBundle = require('express-prom-bundle');
 
@@ -13,7 +14,9 @@ dotenv.config();
 const connectDB = require('./config/db');
 const logger = require('./config/logger');
 const projectRoutes = require('./routes/projectRoutes');
+const authRoutes = require('./routes/authRoutes');
 const mockRoutes = require('./routes/mockRoutes');
+const authMiddleware = require('./middleware/auth');
 const requestLogger = require('./middleware/requestLogger');
 const errorHandler = require('./middleware/errorHandler');
 
@@ -25,7 +28,7 @@ const app = express();
 // Helmet: sets various HTTP headers for security
 app.use(helmet());
 
-// CORS: allow frontend origin
+// CORS: allow frontend origin with credentials
 app.use(
     cors({
         origin: process.env.CORS_ORIGIN || 'http://localhost:5173',
@@ -34,7 +37,7 @@ app.use(
     })
 );
 
-// Rate limiting: max 200 requests per minute per IP
+// Rate limiting: max 200 requests per minute per IP (general safety net)
 const limiter = rateLimit({
     windowMs: 60 * 1000,
     max: 200,
@@ -48,11 +51,14 @@ const limiter = rateLimit({
 });
 app.use(limiter);
 
-// ---------- Body Parsing ----------
+// ---------- Body Parsing & Cookies ----------
 
 // JSON body parser with 1MB limit
 app.use(express.json({ limit: '1mb' }));
 app.use(express.urlencoded({ extended: true, limit: '1mb' }));
+
+// Cookie parser (for JWT httpOnly cookies)
+app.use(cookieParser());
 
 // ---------- Logging ----------
 
@@ -67,7 +73,7 @@ app.use((req, res, next) => {
     next();
 });
 
-// Custom request logger for /mock/* routes (logs to DB)
+// Custom request logger for /api/:apiKey/* mock routes (logs to DB)
 app.use(requestLogger);
 
 // ---------- Prometheus Metrics ----------
@@ -91,11 +97,15 @@ app.get('/api/health', (req, res) => {
     res.json({ status: 'ok', timestamp: new Date().toISOString() });
 });
 
-// Project management
-app.use('/api/projects', projectRoutes);
+// Authentication (public — no JWT required)
+app.use('/api/auth', authRoutes);
 
-// Dynamic mock API engine
-app.use('/mock', mockRoutes);
+// Project management (protected — JWT required)
+app.use('/api/projects', authMiddleware, projectRoutes);
+
+// Dynamic mock API engine (API key authenticated — mounted under /api)
+// Routes: /api/:apiKey/:collection[/:id]
+app.use('/api', mockRoutes);
 
 // Prometheus metrics endpoint
 app.get('/metrics', async (req, res) => {
@@ -125,7 +135,8 @@ const startServer = async () => {
             logger.info(`Server running on port ${PORT} in ${process.env.NODE_ENV || 'development'} mode`);
             console.log(`🚀 Server running on port ${PORT} in ${process.env.NODE_ENV || 'development'} mode`);
             console.log(`📡 API:  http://localhost:${PORT}/api`);
-            console.log(`🔗 Mock: http://localhost:${PORT}/mock`);
+            console.log(`🔑 Auth: http://localhost:${PORT}/api/auth`);
+            console.log(`🔗 Mock: http://localhost:${PORT}/api/{API_KEY}/{collection}`);
         });
     } catch (error) {
         logger.error(`Failed to start server: ${error.message}`);

@@ -1,19 +1,35 @@
 const RequestLog = require('../models/RequestLog');
-const Project = require('../models/Project');
 const logger = require('../config/logger');
 
 /**
  * Request Logger Middleware
  *
- * Intercepts all requests to /mock/* routes and logs them
+ * Intercepts all requests to /api/:apiKey/* mock routes and logs them
  * to the RequestLogs collection for analytics.
  *
  * Runs AFTER the response is sent (using res.on('finish'))
  * to avoid slowing down the actual request.
+ *
+ * Uses req.project (set by apiKeyAuth middleware) to get the project ID
+ * directly, avoiding a separate DB lookup.
  */
 const requestLogger = (req, res, next) => {
-    // Only log /mock/ routes
-    if (!req.originalUrl.startsWith('/mock/')) {
+    // Only log mock API routes (those that will have req.project set by apiKeyAuth)
+    // Pattern: /api/:apiKey/:collection — skip /api/auth/*, /api/projects/*, /api/health
+    const path = req.originalUrl;
+    if (
+        path.startsWith('/api/auth') ||
+        path.startsWith('/api/projects') ||
+        path.startsWith('/api/health') ||
+        path === '/api' ||
+        path === '/api/'
+    ) {
+        return next();
+    }
+
+    // Check if this looks like a mock API route: /api/:apiKey/:collection
+    const parts = path.replace('/api/', '').split('/').filter(Boolean);
+    if (parts.length < 2) {
         return next();
     }
 
@@ -22,20 +38,13 @@ const requestLogger = (req, res, next) => {
     // Hook into the response finish event
     res.on('finish', async () => {
         try {
-            // Extract project basePath from URL
-            const pathParts = req.originalUrl.replace('/mock/', '').split('/');
-            const projectPath = pathParts[0];
-
-            if (!projectPath) return;
-
-            // Find project to get its ID
-            const project = await Project.findOne({ basePath: projectPath }).select('_id');
-            if (!project) return;
+            // req.project is set by apiKeyAuth middleware
+            if (!req.project) return;
 
             const responseTime = Date.now() - startTime;
 
             await RequestLog.create({
-                projectId: project._id,
+                projectId: req.project._id,
                 endpoint: req.originalUrl,
                 method: req.method,
                 body: ['POST', 'PUT', 'PATCH'].includes(req.method) ? req.body : null,
