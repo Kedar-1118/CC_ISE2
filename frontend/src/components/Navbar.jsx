@@ -34,7 +34,7 @@ export default function Navbar() {
         <nav className="navbar">
             <Link to="/" className="navbar-brand">
                 <HiOutlineCode className="brand-icon" />
-                <span>MockAPI</span>
+                <span>DemoAPI</span>
             </Link>
 
             <div className="navbar-links">
