@@ -171,6 +171,7 @@ exports.verifyOtp = async (req, res, next) => {
         logger.info(`User logged in: ${email}`);
         res.json({
             success: true,
+            token, // Return token for cross-origin fallback (Authorization header)
             data: {
                 id: user._id,
                 email: user.email,

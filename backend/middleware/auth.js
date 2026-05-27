@@ -12,7 +12,8 @@ const logger = require('../config/logger');
  */
 const authMiddleware = async (req, res, next) => {
     try {
-        const token = req.cookies?.token;
+        const authHeader = req.headers.authorization;
+        const token = (authHeader && authHeader.startsWith('Bearer ') ? authHeader.split(' ')[1] : null) || req.cookies?.token;
 
         if (!token) {
             logger.warn(`Auth failed: No token provided for ${req.method} ${req.originalUrl}`);

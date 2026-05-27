@@ -35,13 +35,20 @@ export function AuthProvider({ children }) {
 
     const verifyOtp = async (email, otp) => {
         const { data } = await verifyOtpApi(email, otp);
+        if (data.token) {
+            localStorage.setItem('token', data.token);
+        }
         setUser(data.data);
         return data;
     };
 
     const logout = async () => {
-        await logoutApi();
-        setUser(null);
+        try {
+            await logoutApi();
+        } finally {
+            localStorage.removeItem('token');
+            setUser(null);
+        }
     };
 
     return (

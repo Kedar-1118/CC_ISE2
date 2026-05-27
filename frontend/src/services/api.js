@@ -10,6 +10,18 @@ const api = axios.create({
     withCredentials: true, // Required for httpOnly JWT cookies
 });
 
+// Request interceptor to attach token for cross-origin environments (e.g., local frontend -> remote backend)
+api.interceptors.request.use(
+    (config) => {
+        const token = localStorage.getItem('token');
+        if (token) {
+            config.headers.Authorization = `Bearer ${token}`;
+        }
+        return config;
+    },
+    (error) => Promise.reject(error)
+);
+
 // ─── Authentication ───────────────────────────────────
 
 export const sendOtp = (email) =>
