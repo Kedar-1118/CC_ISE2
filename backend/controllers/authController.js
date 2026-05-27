@@ -15,6 +15,10 @@ const createTransporter = () => {
             user: process.env.SMTP_USER,
             pass: process.env.SMTP_PASS,
         },
+        family: 4, // Force IPv4 to avoid slow DNS lookup / TCP timeout on IPv6
+        connectionTimeout: 10000, // 10 seconds connection timeout
+        greetingTimeout: 10000,   // 10 seconds greeting timeout
+        socketTimeout: 10000,     // 10 seconds socket timeout
     });
 };
 
@@ -80,9 +84,9 @@ exports.sendOtp = async (req, res, next) => {
         const code = generateOtp();
         await Otp.create({ email: email.toLowerCase(), code });
 
-        // Send OTP via email
+        // Send OTP via email (non-blocking in background)
         const transporter = createTransporter();
-        await transporter.sendMail({
+        transporter.sendMail({
             from: `"MockAPI" <${process.env.SMTP_USER}>`,
             to: email,
             subject: 'Your MockAPI Login Code',
@@ -96,9 +100,18 @@ exports.sendOtp = async (req, res, next) => {
                     <p style="color: #6c7086; font-size: 13px; margin: 0;">This code expires in 5 minutes. If you didn't request this, please ignore this email.</p>
                 </div>
             `,
+        }).then(() => {
+            logger.info(`OTP email sent successfully to ${email}`);
+        }).catch((err) => {
+            logger.error(`Failed to send OTP email to ${email}: ${err.message}`);
         });
 
-        logger.info(`OTP sent to ${email}`);
+        // Log OTP to console in development for easier local testing
+        if (process.env.NODE_ENV !== 'production') {
+            console.log(`🔑 [DEV ONLY] OTP for ${email}: ${code}`);
+        }
+
+        logger.info(`OTP generation triggered for ${email}`);
         res.json({
             success: true,
             message: 'OTP sent to your email',
