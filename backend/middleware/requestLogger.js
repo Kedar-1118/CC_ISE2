@@ -1,5 +1,6 @@
 const RequestLog = require('../models/RequestLog');
 const logger = require('../config/logger');
+const { mockRequestsTotal, mockRequestDuration } = require('../config/metrics');
 
 /**
  * Request Logger Middleware
@@ -34,6 +35,7 @@ const requestLogger = (req, res, next) => {
     }
 
     const startTime = Date.now();
+    const collection = parts[1] || 'unknown'; // /api/:apiKey/:collection
 
     // Hook into the response finish event
     res.on('finish', async () => {
@@ -42,6 +44,15 @@ const requestLogger = (req, res, next) => {
             if (!req.project) return;
 
             const responseTime = Date.now() - startTime;
+            const durationSeconds = responseTime / 1000;
+
+            // ── Prometheus metrics ────────────────────────
+            mockRequestsTotal.inc({
+                method: req.method,
+                collection,
+                status_code: String(res.statusCode),
+            });
+            mockRequestDuration.observe({ method: req.method, collection }, durationSeconds);
 
             await RequestLog.create({
                 projectId: req.project._id,
@@ -53,7 +64,7 @@ const requestLogger = (req, res, next) => {
             });
 
             logger.info(`Mock request logged: ${req.method} ${req.originalUrl} ${res.statusCode} ${responseTime}ms`, {
-                labels: { type: 'mock-request', method: req.method, status: String(res.statusCode) },
+                labels: { type: 'mock-request', method: req.method, status: String(res.statusCode), collection },
             });
         } catch (error) {
             logger.error(`Request logging error: ${error.message}`, { labels: { type: 'logging-error' } });

@@ -1,5 +1,6 @@
 const Project = require('../models/Project');
 const logger = require('../config/logger');
+const { rateLimitHitsTotal } = require('../config/metrics');
 
 const SEVEN_DAYS_MS = 7 * 24 * 60 * 60 * 1000;
 
@@ -54,6 +55,7 @@ const apiKeyAuth = async (req, res, next) => {
         if (project.weeklyRateLimit.requestCount >= limit) {
             const resetDate = new Date(project.weeklyRateLimit.weekStart.getTime() + SEVEN_DAYS_MS);
             logger.warn(`Rate limit exceeded for project "${project.projectName}" (${project.weeklyRateLimit.requestCount}/${limit})`);
+            rateLimitHitsTotal.inc({ type: 'weekly_rate_limit' });
             return res.status(429).json({
                 success: false,
                 error: 'Weekly rate limit exceeded',
