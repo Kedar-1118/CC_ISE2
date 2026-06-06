@@ -4,6 +4,7 @@ const nodemailer = require('nodemailer');
 const User = require('../models/User');
 const Otp = require('../models/Otp');
 const logger = require('../config/logger');
+const { authOperationsTotal } = require('../config/metrics');
 
 // Configure Nodemailer transporter
 const createTransporter = () => {
@@ -112,6 +113,7 @@ exports.sendOtp = async (req, res, next) => {
         }
 
         logger.info(`OTP generation triggered for ${email}`);
+        authOperationsTotal.inc({ operation: 'otp_sent' });
         res.json({
             success: true,
             message: 'OTP sent to your email',
@@ -169,6 +171,7 @@ exports.verifyOtp = async (req, res, next) => {
         sendTokenCookie(res, token);
 
         logger.info(`User logged in: ${email}`);
+        authOperationsTotal.inc({ operation: 'login' });
         res.json({
             success: true,
             token, // Return token for cross-origin fallback (Authorization header)
@@ -198,6 +201,7 @@ exports.logout = (req, res) => {
     });
 
     logger.info('User logged out');
+    authOperationsTotal.inc({ operation: 'logout' });
     res.json({ success: true, message: 'Logged out successfully' });
 };
 

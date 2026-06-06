@@ -2,6 +2,7 @@ const Project = require('../models/Project');
 const RequestLog = require('../models/RequestLog');
 const { v4: uuidv4 } = require('uuid');
 const logger = require('../config/logger');
+const { projectsCreatedTotal, projectsDeletedTotal } = require('../config/metrics');
 
 const MAX_PROJECTS_PER_USER = 3;
 
@@ -74,6 +75,7 @@ exports.createProject = async (req, res, next) => {
         });
 
         logger.info(`Project created: "${projectName}" (${project._id}) by ${req.user.email} with API key ${apiKey.substring(0, 8)}... and ${collections.size} collections`);
+        projectsCreatedTotal.inc();
         res.status(201).json({
             success: true,
             data: {
@@ -191,6 +193,7 @@ exports.deleteProject = async (req, res, next) => {
         await RequestLog.deleteMany({ projectId: req.params.id });
 
         logger.info(`Deleted project: "${project.projectName}" (${req.params.id}) and its logs`);
+        projectsDeletedTotal.inc();
         res.json({ success: true, data: {} });
     } catch (error) {
         logger.error(`Error in deleteProject: ${error.message}`);

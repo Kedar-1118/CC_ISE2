@@ -7,6 +7,7 @@ const dotenv = require('dotenv');
 const cookieParser = require('cookie-parser');
 const client = require('prom-client');
 const promBundle = require('express-prom-bundle');
+const { rateLimitHitsTotal } = require('./config/metrics');
 
 // Load environment variables
 dotenv.config();
@@ -46,6 +47,7 @@ const limiter = rateLimit({
     message: { success: false, error: 'Too many requests, please try again later' },
     handler: (req, res, next, options) => {
         logger.warn(`Rate limit exceeded for IP: ${req.ip}`);
+        rateLimitHitsTotal.inc({ type: 'ip_rate_limit' });
         res.status(options.statusCode).json(options.message);
     },
 });
