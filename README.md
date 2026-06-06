@@ -86,6 +86,38 @@ DELETE /mock/my-project/posts/:id
 | ⚙️ Backend | Node.js + Express 4 |
 | 🗄️ Database | MongoDB Atlas (Mongoose 8) |
 | 🎨 Styling | Vanilla CSS (dark theme) |
+| 📊 Monitoring | Prometheus + Grafana + Loki |
+
+---
+
+## 📊 Monitoring Stack
+
+The project includes a full observability stack using **Prometheus** (metrics), **Grafana** (dashboards), and **Loki** (log aggregation).
+
+### Start the Monitoring Stack
+
+```bash
+cd backend
+docker compose up -d
+```
+
+### Access Points
+
+| Service | URL | Credentials |
+|---|---|---|
+| 📈 Grafana | [http://localhost:3000](http://localhost:3000) | admin / admin |
+| 🔍 Prometheus | [http://localhost:9090](http://localhost:9090) | — |
+| 📝 Loki | [http://localhost:3100](http://localhost:3100) | — |
+
+### What's Monitored
+
+- **HTTP Metrics**: Request rate, response times (p50/p95/p99), status codes, per-route breakdown
+- **Node.js Runtime**: CPU usage, memory/heap, event loop lag, active handles
+- **Application Metrics**: Mock API requests by collection, error rates by type, rate limit hits
+- **Live Logs**: Searchable application logs streamed via Loki with error filtering
+- **Alerts**: High error rate, slow responses, memory warnings, app down detection
+
+> The Grafana dashboard and data sources are **auto-provisioned** — no manual setup needed.
 
 ---
 

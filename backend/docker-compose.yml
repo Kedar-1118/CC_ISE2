@@ -1,25 +1,52 @@
-version: "3"
+version: "3.8"
 
 services:
-  prom-server:
+  # ── Prometheus — metrics collection ──────────────────────
+  prometheus:
     image: prom/prometheus:latest
-    container_name: prom-server
+    container_name: prometheus
     ports:
       - "9090:9090"
     volumes:
       - ./prometheus-config.yml:/etc/prometheus/prometheus.yml
+      - ./prometheus-alert-rules.yml:/etc/prometheus/alert-rules.yml
+      - prometheus-data:/prometheus
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    restart: unless-stopped
 
+  # ── Loki — log aggregation ──────────────────────────────
+  loki:
+    image: grafana/loki:2.9.0
+    container_name: loki
+    ports:
+      - "3100:3100"
+    volumes:
+      - ./loki-config.yml:/etc/loki/local-config.yaml
+      - loki-data:/loki
+    command: -config.file=/etc/loki/local-config.yaml
+    restart: unless-stopped
+
+  # ── Grafana — dashboards & visualization ────────────────
   grafana:
     image: grafana/grafana:latest
     container_name: grafana
     ports:
       - "3000:3000"
     environment:
+      - GF_SECURITY_ADMIN_USER=admin
       - GF_SECURITY_ADMIN_PASSWORD=admin
+      - GF_DASHBOARDS_DEFAULT_HOME_DASHBOARD_PATH=/var/lib/grafana/dashboards/mockapi-dashboard.json
     volumes:
       - grafana-data:/var/lib/grafana
+      - ./grafana/provisioning:/etc/grafana/provisioning
+      - ./grafana-dashboard.json:/var/lib/grafana/dashboards/mockapi-dashboard.json
     depends_on:
-      - prom-server
+      - prometheus
+      - loki
+    restart: unless-stopped
 
 volumes:
   grafana-data:
+  prometheus-data:
+  loki-data:
