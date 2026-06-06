@@ -1,15 +1,17 @@
-# global:
-#   scrape_interval: 4s
-
-# scrape_configs:
-#   - job_name: "prometheus"
-#     static_configs:
-#       -targets: ["10.65.214.237/5000"]
-
 global:
-  scrape_interval: 4s
+  scrape_interval: 5s
+  evaluation_interval: 5s
+
+rule_files:
+  - "alert-rules.yml"
 
 scrape_configs:
+  - job_name: "prometheus"
+    static_configs:
+      - targets: ["localhost:9090"]
+
   - job_name: "node-app"
     static_configs:
-      - targets: ["10.255.31.218:5000"]
+      - targets: ["host.docker.internal:5000"]
+    metrics_path: /metrics
+    scrape_interval: 4s

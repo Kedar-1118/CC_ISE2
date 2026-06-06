@@ -1,0 +1,93 @@
+groups:
+  - name: mockapi-alerts
+    rules:
+      # ── High Error Rate ──────────────────────────────────
+      - alert: HighErrorRate
+        expr: |
+          (
+            sum(rate(http_request_duration_seconds_count{status_code=~"5.."}[5m]))
+            /
+            sum(rate(http_request_duration_seconds_count[5m]))
+          ) * 100 > 5
+        for: 2m
+        labels:
+          severity: critical
+        annotations:
+          summary: "High HTTP error rate (> 5%)"
+          description: "More than 5% of HTTP requests are returning 5xx errors over the last 5 minutes."
+
+      # ── High Response Time ───────────────────────────────
+      - alert: HighResponseTime
+        expr: |
+          histogram_quantile(0.95, sum(rate(http_request_duration_seconds_bucket[5m])) by (le)) > 2
+        for: 3m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High p95 response time (> 2s)"
+          description: "The 95th percentile response time has exceeded 2 seconds for 3+ minutes."
+
+      # ── Node.js High Memory Usage ───────────────────────
+      - alert: HighMemoryUsage
+        expr: |
+          process_resident_memory_bytes / 1024 / 1024 > 512
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Node.js process memory > 512MB"
+          description: "The Node.js process resident memory has been above 512MB for 5+ minutes."
+
+      # ── High Heap Usage ──────────────────────────────────
+      - alert: HighHeapUsage
+        expr: |
+          (nodejs_heap_size_used_bytes / nodejs_heap_size_total_bytes) * 100 > 85
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Heap usage > 85%"
+          description: "Node.js heap usage has exceeded 85% for 5+ minutes. Risk of OOM."
+
+      # ── High Event Loop Lag ──────────────────────────────
+      - alert: HighEventLoopLag
+        expr: |
+          nodejs_eventloop_lag_seconds > 0.5
+        for: 2m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Event loop lag > 500ms"
+          description: "The Node.js event loop lag has exceeded 500ms for 2+ minutes, indicating potential blocking."
+
+      # ── Rate Limit Spikes ────────────────────────────────
+      - alert: RateLimitSpike
+        expr: |
+          rate(mockapi_rate_limit_hits_total[5m]) > 1
+        for: 3m
+        labels:
+          severity: info
+        annotations:
+          summary: "Elevated rate limit rejections"
+          description: "Rate limit rejections are occurring at more than 1/sec for 3+ minutes."
+
+      # ── App Errors Spike ─────────────────────────────────
+      - alert: ApplicationErrorSpike
+        expr: |
+          rate(mockapi_errors_total[5m]) > 0.5
+        for: 2m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Application error rate elevated"
+          description: "Application errors are occurring at more than 0.5/sec for 2+ minutes."
+
+      # ── Target Down ──────────────────────────────────────
+      - alert: NodeAppDown
+        expr: up{job="node-app"} == 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Node.js app is down"
+          description: "Prometheus cannot scrape the Node.js application for 1+ minute."
