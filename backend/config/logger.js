@@ -9,15 +9,17 @@ const NODE_ENV = process.env.NODE_ENV || "development";
  *   1. Console  → coloured, human-readable (always active)
  *   2. Loki     → structured JSON pushed to Grafana Loki for dashboard queries
  */
-const logger = createLogger({
-    level: NODE_ENV === "production" ? "info" : "debug",
-    format: format.combine(
-        format.timestamp({ format: "YYYY-MM-DD HH:mm:ss" }),
-        format.errors({ stack: true }),
-        format.json()
-    ),
-    defaultMeta: { service: "mock-api-server" },
-    transports: [
+const transportOptions = [];
+
+if (NODE_ENV === "test") {
+    // Silent console during test runs
+    transportOptions.push(
+        new transports.Console({
+            silent: true,
+        })
+    );
+} else {
+    transportOptions.push(
         // ── Console (always) ──────────────────────────────
         new transports.Console({
             format: format.combine(
@@ -41,8 +43,19 @@ const logger = createLogger({
             onConnectionError: (err) => {
                 console.error(`⚠️  Loki connection error (${LOKI_HOST}):`, err.message);
             },
-        }),
-    ],
+        })
+    );
+}
+
+const logger = createLogger({
+    level: NODE_ENV === "production" ? "info" : "debug",
+    format: format.combine(
+        format.timestamp({ format: "YYYY-MM-DD HH:mm:ss" }),
+        format.errors({ stack: true }),
+        format.json()
+    ),
+    defaultMeta: { service: "mock-api-server" },
+    transports: transportOptions,
 });
 
 module.exports = logger;
