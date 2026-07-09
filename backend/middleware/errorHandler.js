@@ -8,7 +8,9 @@ const { errorsTotal } = require('../config/metrics');
  * In development mode, includes the stack trace for debugging.
  */
 const errorHandler = (err, req, res, _next) => {
-    console.error('❌ Error:', err.message);
+    if (process.env.NODE_ENV !== 'test') {
+        console.error('❌ Error:', err.message);
+    }
 
     // Mongoose validation error
     if (err.name === 'ValidationError') {
