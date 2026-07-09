@@ -100,11 +100,22 @@ describe('Mock API Engine', () => {
         });
 
         it('should fail if body is not a JSON object', async () => {
-            const res = await request(app)
+            // Case 1: Invalid JSON syntax (body parser throws error)
+            const resInvalidJson = await request(app)
                 .post(`/api/${apiKey}/products`)
+                .set('Content-Type', 'application/json')
                 .send('not-a-json-object');
 
-            expect(res.statusCode).toBe(400);
+            expect(resInvalidJson.statusCode).toBe(400);
+
+            // Case 2: Valid JSON but not an object (e.g. array) (controller returns 400)
+            const resArray = await request(app)
+                .post(`/api/${apiKey}/products`)
+                .send([{ name: 'Monitor' }]);
+
+            expect(resArray.statusCode).toBe(400);
+            expect(resArray.body.success).toBe(false);
+            expect(resArray.body.error).toBe('Request body must be a JSON object');
         });
     });
 
