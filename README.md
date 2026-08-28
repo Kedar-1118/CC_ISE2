@@ -1,9 +1,4 @@
 <div align="center">
-
-## 🌐 [Live Demo → cc-ise-2.vercel.app](https://cc-ise-2.vercel.app/)
-
-> **Click above to try it instantly — no signup, no setup required.**
-
 ---
 
 # 🚀 API Mock Server as a Service
